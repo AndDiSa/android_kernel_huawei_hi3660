@@ -321,6 +321,7 @@ static int decode_int(bitstr_t *bs, const struct field_t *f,
 	case CONS:		/* 64K < Range < 4G */
 		len = get_bits(bs, 2) + 1;
 		BYTE_ALIGN(bs);
+		CHECK_BOUND(bs, len);
 		if (base && (f->attr & DECODE)) {	/* timeToLive */
 			unsigned int v = get_uint(bs, len) + f->lb;
 			PRINT(" = %u", v);
