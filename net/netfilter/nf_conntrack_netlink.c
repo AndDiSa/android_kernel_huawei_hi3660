@@ -2501,7 +2501,7 @@ ctnetlink_exp_dump_expect(struct sk_buff *skb,
 {
 	struct nf_conn *master = exp->master;
 	long timeout = ((long)exp->timeout.expires - (long)jiffies) / HZ;
-	struct nf_conn_help *help;
+	struct nf_conntrack_helper *helper;
 #ifdef CONFIG_NF_NAT_NEEDED
 	struct nlattr *nest_parms;
 	struct nf_conntrack_tuple nat_tuple = {};
@@ -2546,15 +2546,12 @@ ctnetlink_exp_dump_expect(struct sk_buff *skb,
 	    nla_put_be32(skb, CTA_EXPECT_FLAGS, htonl(exp->flags)) ||
 	    nla_put_be32(skb, CTA_EXPECT_CLASS, htonl(exp->class)))
 		goto nla_put_failure;
-	help = nfct_help(master);
-	if (help) {
-		struct nf_conntrack_helper *helper;
 
-		helper = rcu_dereference(help->helper);
-		if (helper &&
-		    nla_put_string(skb, CTA_EXPECT_HELP_NAME, helper->name))
-			goto nla_put_failure;
-	}
+	helper = rcu_dereference(exp->helper);
+	if (helper &&
+	    nla_put_string(skb, CTA_EXPECT_HELP_NAME, helper->name))
+		goto nla_put_failure;
+
 	expfn = nf_ct_helper_expectfn_find_by_symbol(exp->expectfn);
 	if (expfn != NULL &&
 	    nla_put_string(skb, CTA_EXPECT_FN, expfn->name))
@@ -2926,7 +2923,7 @@ static int ctnetlink_del_expect(struct net *net, struct sock *ctnl,
 		nf_ct_expect_put(exp);
 	} else if (cda[CTA_EXPECT_HELP_NAME]) {
 		char *name = nla_data(cda[CTA_EXPECT_HELP_NAME]);
-		struct nf_conn_help *m_help;
+		struct nf_conntrack_helper *m_helper;
 
 		/* delete all expectations for this helper */
 		spin_lock_bh(&nf_conntrack_expect_lock);
@@ -2938,8 +2935,8 @@ static int ctnetlink_del_expect(struct net *net, struct sock *ctnl,
 				if (!net_eq(nf_ct_exp_net(exp), net))
 					continue;
 
-				m_help = nfct_help(exp->master);
-				if (!strcmp(m_help->helper->name, name) &&
+				m_helper = rcu_dereference(exp->helper);
+				if (m_helper && !strcmp(m_helper->name, name) &&
 				    del_timer(&exp->timeout)) {
 					nf_ct_unlink_expect_report(exp,
 							NETLINK_CB(skb).portid,
@@ -3032,9 +3029,9 @@ ctnetlink_alloc_expect(const struct nlattr * const cda[], struct nf_conn *ct,
 		       struct nf_conntrack_tuple *tuple,
 		       struct nf_conntrack_tuple *mask)
 {
-	u_int32_t class = 0;
 	struct nf_conntrack_expect *exp;
 	struct nf_conn_help *help;
+	u32 class = 0;
 	int err;
 
 	if (cda[CTA_EXPECT_CLASS] && helper) {
@@ -3082,7 +3079,9 @@ ctnetlink_alloc_expect(const struct nlattr * const cda[], struct nf_conn *ct,
 
 	exp->class = class;
 	exp->master = ct;
-	exp->helper = helper;
+	if (!helper)
+		helper = rcu_dereference(help->helper);
+	rcu_assign_pointer(exp->helper, helper);
 	exp->tuple = *tuple;
 	exp->mask.src.u3 = mask->src.u3;
 	exp->mask.src.u.all = mask->src.u.all;

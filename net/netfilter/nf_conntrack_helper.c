@@ -460,11 +460,10 @@ void nf_conntrack_helper_unregister(struct nf_conntrack_helper *me)
 	for (i = 0; i < nf_ct_expect_hsize; i++) {
 		hlist_for_each_entry_safe(exp, next,
 					  &nf_ct_expect_hash[i], hnode) {
-			struct nf_conn_help *help = nfct_help(exp->master);
-			if ((rcu_dereference_protected(
-					help->helper,
+			if (rcu_dereference_protected(
+					exp->helper,
 					lockdep_is_held(&nf_conntrack_expect_lock)
-					) == me || exp->helper == me) &&
+					) == me &&
 			    del_timer(&exp->timeout)) {
 				nf_ct_unlink_expect(exp);
 				nf_ct_expect_put(exp);
