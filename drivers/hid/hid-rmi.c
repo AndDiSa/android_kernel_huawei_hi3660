@@ -270,7 +270,23 @@ static int rmi_read_block(struct hid_device *hdev, u16 addr, void *buf,
 				break;
 			}
 
-			read_input_count = data->readReport[1];
+			read_input_count = min_t(int, data->readReport[1],
+						 data->input_report_size - 2);
+			if (!read_input_count) {
+				/*
+				 * A zero length reply advances neither
+				 * bytes_read nor bytes_needed, and because a
+				 * reply did arrive the wait above does not
+				 * time out either, so a device answering 0
+				 * forever would spin here indefinitely with
+				 * page_mutex held.
+				 */
+				hid_warn(hdev, "%s: zero-length read reply\n",
+					 __func__);
+				clear_bit(RMI_READ_DATA_PENDING, &data->flags);
+				ret = -EIO;
+				break;
+			}
 			memcpy(buf + bytes_read, &data->readReport[2],
 				read_input_count < bytes_needed ?
 					read_input_count : bytes_needed);
@@ -309,6 +325,11 @@ static int rmi_write_block(struct hid_device *hdev, u16 addr, void *buf,
 		ret = rmi_set_page(hdev, RMI_PAGE(addr));
 		if (ret < 0)
 			goto exit;
+	}
+
+	if (len + 4 > data->output_report_size) {
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	data->writeReport[0] = RMI_WRITE_REPORT_ID;
@@ -1330,8 +1351,16 @@ static int rmi_probe(struct hid_device *hdev, const struct hid_device_id *id)
 		return ret;
 	}
 
-	if (id->driver_data)
-		data->device_flags = id->driver_data;
+	/*
+	 * RMI_DEVICE can only mean "this probe validated the RMI reports and
+	 * allocated writeReport": every bail-out to start below skips that
+	 * allocation, and device_flags left carrying RMI_DEVICE from
+	 * driver_data would send rmi_input_configured() into rmi_set_page()
+	 * with writeReport still NULL.  A bind through the new_id sysfs
+	 * attribute can supply driver_data with the bit set, so do not let
+	 * driver_data grant it.
+	 */
+	data->device_flags = id->driver_data & ~RMI_DEVICE;
 
 	/*
 	 * Check for the RMI specific report ids. If they are misisng
@@ -1359,6 +1388,17 @@ static int rmi_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	}
 
 	data->output_report_size = hid_report_len(output_report);
+
+	/*
+	 * The write reports built by this driver occupy 6 bytes and the read
+	 * handshake looks at the first 3 bytes of an input report, so refuse
+	 * to drive a device whose reports cannot hold them.
+	 */
+	if (data->output_report_size < 6 || data->input_report_size < 3) {
+		hid_err(hdev, "rmi reports too small (out=%u in=%u)\n",
+			data->output_report_size, data->input_report_size);
+		goto start;
+	}
 
 	data->device_flags |= RMI_DEVICE;
 	alloc_size = data->output_report_size + data->input_report_size;
