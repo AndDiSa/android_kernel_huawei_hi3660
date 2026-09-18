@@ -1258,7 +1258,7 @@ static long ffs_epfile_ioctl(struct file *file, unsigned code,
 		case FUNCTIONFS_ENDPOINT_DESC:
 		{
 			int desc_idx;
-			struct usb_endpoint_descriptor *desc;
+			const struct usb_endpoint_descriptor *desc;
 
 			switch (epfile->ffs->gadget->speed) {
 			case USB_SPEED_SUPER:
@@ -1270,7 +1270,17 @@ static long ffs_epfile_ioctl(struct file *file, unsigned code,
 			default:
 				desc_idx = 0;
 			}
-			desc = epfile->ep->descs[desc_idx];
+
+			do {
+				desc = epfile->ep->descs[desc_idx];
+			} while (!desc && --desc_idx >= 0);
+
+			if (!desc)
+				desc = epfile->ep->ep->desc;
+			if (!desc) {
+				ret = -EINVAL;
+				break;
+			}
 
 			spin_unlock_irq(&epfile->ffs->eps_lock);
 			ret = copy_to_user((void *)value, desc, sizeof(*desc));
