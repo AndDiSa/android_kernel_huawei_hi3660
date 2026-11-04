@@ -384,6 +384,13 @@ int snd_timer_close(struct snd_timer_instance *timeri)
 	return 0;
 }
 
+static unsigned long snd_timer_hw_resolution(struct snd_timer *timer)
+{
+	if (timer->hw.c_resolution)
+		return timer->hw.c_resolution(timer);
+	return timer->hw.resolution;
+}
+
 unsigned long snd_timer_resolution(struct snd_timer_instance *timeri)
 {
 	struct snd_timer * timer;
@@ -391,9 +398,7 @@ unsigned long snd_timer_resolution(struct snd_timer_instance *timeri)
 	if (timeri == NULL)
 		return 0;
 	if ((timer = timeri->timer) != NULL) {
-		if (timer->hw.c_resolution)
-			return timer->hw.c_resolution(timer);
-		return timer->hw.resolution;
+		return snd_timer_hw_resolution(timer);
 	}
 	return 0;
 }
