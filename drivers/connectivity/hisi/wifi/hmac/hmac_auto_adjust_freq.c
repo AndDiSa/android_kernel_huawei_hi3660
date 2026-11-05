@@ -515,7 +515,7 @@ oal_void hmac_wifi_init_freq_threshold(void)
 #if (_PRE_OS_VERSION_LINUX == _PRE_OS_VERSION)
 oal_void hmac_wifi_auto_ddr_init(oal_void)
 {
-    g_pst_wifi_auto_ddr = kmalloc(sizeof(struct pm_qos_request), GFP_KERNEL);
+    g_pst_wifi_auto_ddr = kzalloc(sizeof(struct pm_qos_request), GFP_KERNEL);
     if (g_pst_wifi_auto_ddr == NULL)
     {
         OAL_IO_PRINT("[AUTODDR]pm_qos_request alloc memory failed.\n");
