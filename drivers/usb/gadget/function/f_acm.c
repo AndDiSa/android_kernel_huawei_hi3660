@@ -14,7 +14,6 @@
 
 /* #define VERBOSE_DEBUG */
 
-#include <linux/cleanup.h>
 #include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -616,7 +615,7 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 	struct usb_string	*us;
 	int			status;
 	struct usb_ep		*ep;
-	struct usb_request	*request __free(free_usb_request) = NULL;
+	struct usb_request	*request = NULL;
 
 	/* REVISIT might want instance-specific strings to help
 	 * distinguish instances ...
@@ -690,10 +689,12 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 
 	status = usb_assign_descriptors(f, acm_fs_function, acm_hs_function,
 			acm_ss_function, acm_ss_function);
-	if (status)
+	if (status) {
+		gs_free_req(ep, request);
 		return status;
+	}
 
-	acm->notify_req = no_free_ptr(request);
+	acm->notify_req = request;
 
 	dev_dbg(&cdev->gadget->dev,
 		"acm ttyGS%d: %s speed IN/%s OUT/%s NOTIFY/%s\n",
@@ -712,8 +713,10 @@ static void acm_unbind(struct usb_configuration *c, struct usb_function *f)
 
 	acm_string_defs[0].id = 0;
 	usb_free_all_descriptors(f);
-	if (acm->notify_req)
+	if (acm->notify_req) {
 		gs_free_req(acm->notify, acm->notify_req);
+		acm->notify_req = NULL;
+	}
 }
 
 static void acm_free_func(struct usb_function *f)
