@@ -499,7 +499,7 @@ static struct rtable *icmp_route_lookup(struct net *net,
 	if (!IS_ERR(rt)) {
 		if (rt != rt2)
 			return rt;
-		if (inet_addr_type_dev_table(net, route_lookup_dev,
+		if (inet_addr_type_dev_table(net, skb_dst(skb_in)->dev,
 					     fl4->daddr) == RTN_LOCAL)
 			return rt;
 	} else if (PTR_ERR(rt) == -EPERM) {

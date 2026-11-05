@@ -6858,23 +6858,20 @@ trace_options_core_write(struct file *filp, const char __user *ubuf, size_t cnt,
 static int trace_array_options_get(void *tr_index)
 {
 	struct trace_array *tr;
-	int ret;
-
-	ret = security_locked_down(LOCKDOWN_TRACEFS);
-	if (ret)
-		return ret;
 
 	if (tracing_disabled)
 		return -ENODEV;
 
-	guard(mutex)(&trace_types_lock);
+	mutex_lock(&trace_types_lock);
 	list_for_each_entry(tr, &ftrace_trace_arrays, list) {
 		if (tr_index >= (void *)&tr->trace_flags_index[0] &&
 		    tr_index < (void *)&tr->trace_flags_index[TRACE_FLAGS_MAX_SIZE]) {
 			tr->ref++;
+			mutex_unlock(&trace_types_lock);
 			return 0;
 		}
 	}
+	mutex_unlock(&trace_types_lock);
 	return -ENODEV;
 }
 
