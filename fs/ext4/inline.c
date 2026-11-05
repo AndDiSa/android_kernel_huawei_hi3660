@@ -1541,7 +1541,7 @@ int ext4_read_inline_dir(struct file *file,
 			/* for other entry, the real offset in
 			 * the buf has to be tuned accordingly.
 			 */
-			if (i + ext4_dir_rec_len(1, NULL) > extra_size)
+			if (i + EXT4_DIR_REC_LEN(1) > extra_size)
 				break;
 			de = (struct ext4_dir_entry_2 *)
 				(dir_buf + i - extra_offset);
@@ -1582,7 +1582,7 @@ int ext4_read_inline_dir(struct file *file,
 		 * kmalloc(inline_size) buffer.  Make sure its header fits before
 		 * ext4_check_dir_entry() dereferences de->rec_len.
 		 */
-		if (ctx->pos + ext4_dir_rec_len(1, NULL) > extra_size)
+		if (ctx->pos + EXT4_DIR_REC_LEN(1) > extra_size)
 			goto out;
 		de = (struct ext4_dir_entry_2 *)
 			(dir_buf + ctx->pos - extra_offset);
