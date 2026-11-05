@@ -1529,14 +1529,13 @@ static int usb_udc_uevent(struct device *dev, struct kobj_uevent_env *env)
 		return ret;
 	}
 
-	mutex_lock(&udc_lock);
-	if (udc->driver)
+	if (udc->driver) {
 		ret = add_uevent_var(env, "USB_UDC_DRIVER=%s",
 				udc->driver->function);
-	mutex_unlock(&udc_lock);
-	if (ret) {
-		dev_err(dev, "failed to add uevent USB_UDC_DRIVER\n");
-		return ret;
+		if (ret) {
+			dev_err(dev, "failed to add uevent USB_UDC_DRIVER\n");
+			return ret;
+		}
 	}
 
 	return 0;
