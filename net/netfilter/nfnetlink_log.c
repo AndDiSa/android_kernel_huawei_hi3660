@@ -352,14 +352,19 @@ static void
 __nfulnl_send(struct nfulnl_instance *inst)
 {
 	if (inst->qlen > 1) {
-		struct nlmsghdr *nlh = nfnl_msg_put(inst->skb, 0, 0,
-						    NLMSG_DONE, 0,
-						    AF_UNSPEC, NFNETLINK_V0,
-						    htons(inst->group_num));
+		struct nlmsghdr *nlh = nlmsg_put(inst->skb, 0, 0,
+						 NLMSG_DONE,
+						 sizeof(struct nfgenmsg),
+						 0);
 		if (WARN_ONCE(!nlh, "bad nlskb size: %u, tailroom %d\n",
 			      inst->skb->len, skb_tailroom(inst->skb))) {
 			kfree_skb(inst->skb);
 			goto out;
+		} else {
+			struct nfgenmsg *nfmsg = nlmsg_data(nlh);
+			nfmsg->nfgen_family = AF_UNSPEC;
+			nfmsg->version = NFNETLINK_V0;
+			nfmsg->res_id = htons(inst->group_num);
 		}
 	}
 	nfnetlink_unicast(inst->skb, inst->net, inst->peer_portid,
