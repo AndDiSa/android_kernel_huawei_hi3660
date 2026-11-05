@@ -3159,7 +3159,7 @@ skb_header_pointer(const struct sk_buff *skb, int offset, int len, void *buffer)
 static inline void * __must_check
 skb_header_pointer_careful(const struct sk_buff *skb, int offset, int len, void *buffer)
 {
-	if (offset < 0 && (skb_headroom(skb) + offset) < 0)
+	if (offset < 0 && (int)skb_headroom(skb) + offset < 0)
 		return NULL;
 	return skb_header_pointer(skb, offset, len, buffer);
 }

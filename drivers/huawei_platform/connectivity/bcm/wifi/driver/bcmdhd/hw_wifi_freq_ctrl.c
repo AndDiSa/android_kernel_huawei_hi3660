@@ -363,7 +363,7 @@ static int set_ddr_freq(uint value, int type)
 
 static void add_ddr_request(void)
 {
-    pq_req = kmalloc(sizeof(struct pm_qos_request), GFP_KERNEL);
+    pq_req = kzalloc(sizeof(struct pm_qos_request), GFP_KERNEL);
     if(pq_req == NULL){
         HW_PRINT_HI("%s: malloc error\n", __FUNCTION__);
         return;
