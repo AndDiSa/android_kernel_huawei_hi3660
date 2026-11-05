@@ -708,6 +708,12 @@ extern int fb_init_device(struct fb_info *fb_info);
 extern void fb_cleanup_device(struct fb_info *head);
 extern void fb_bl_default_curve(struct fb_info *fb_info, u8 off, u8 min, u8 max);
 
+#if IS_ENABLED(CONFIG_FRAMEBUFFER_CONSOLE)
+void fbcon_delete_modelist(struct list_head *head);
+#else
+static inline void fbcon_delete_modelist(struct list_head *head) {}
+#endif
+
 /* drivers/video/fbmon.c */
 #define FB_MAXTIMINGS		0
 #define FB_VSYNCTIMINGS		1
