@@ -147,6 +147,7 @@ void rtnl_af_register(struct rtnl_af_ops *ops);
 void rtnl_af_unregister(struct rtnl_af_ops *ops);
 
 struct net *rtnl_link_get_net(struct net *src_net, struct nlattr *tb[]);
+bool rtnl_dev_link_net_capable(const struct net_device *dev, const struct net *link_net);
 struct net_device *rtnl_create_link(struct net *net, const char *ifname,
 				    unsigned char name_assign_type,
 				    const struct rtnl_link_ops *ops,

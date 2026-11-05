@@ -1023,6 +1023,19 @@ static inline long long atomic64_fetch_andnot_release(long long i, atomic64_t *v
 }
 #endif
 
+#ifndef atomic_try_cmpxchg
+static inline bool atomic_try_cmpxchg(atomic_t *v, int *old, int new)
+{
+	int r, o = *old;
+	r = atomic_cmpxchg(v, o, new);
+	if (unlikely(r != o)) {
+		*old = r;
+		return false;
+	}
+	return true;
+}
+#endif
+
 #include <asm-generic/atomic-long.h>
 
 #endif /* _LINUX_ATOMIC_H */

@@ -1186,7 +1186,7 @@ static int nfqnl_recv_verdict(struct net *net, struct sock *ctnl,
 	if (entry->state.pf == PF_BRIDGE) {
 		err = nfqa_parse_bridge(entry, nfqa);
 		if (err < 0) {
-			nfqnl_reinject(entry, NF_DROP);
+			nf_reinject(entry, NF_DROP);
 			return err;
 		}
 	}

@@ -1664,6 +1664,12 @@ struct net *rtnl_link_get_net(struct net *src_net, struct nlattr *tb[])
 }
 EXPORT_SYMBOL(rtnl_link_get_net);
 
+bool rtnl_dev_link_net_capable(const struct net_device *dev, const struct net *link_net)
+{
+	return net_eq(link_net, dev_net(dev)) || ns_capable(link_net->user_ns, CAP_NET_ADMIN);
+}
+EXPORT_SYMBOL_GPL(rtnl_dev_link_net_capable);
+
 static int validate_linkmsg(struct net_device *dev, struct nlattr *tb[])
 {
 	if (dev) {
