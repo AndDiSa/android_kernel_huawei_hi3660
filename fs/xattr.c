@@ -205,6 +205,32 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
 	return error;
 }
 
+int
+__vfs_setxattr_locked(struct dentry *dentry, const char *name,
+		const void *value, size_t size, int flags,
+		struct inode **delegated_inode)
+{
+	struct inode *inode = dentry->d_inode;
+	int error;
+
+	error = xattr_permission(NULL, inode, name, MAY_WRITE);
+	if (error)
+		return error;
+
+	error = security_inode_setxattr(dentry, name, value, size, flags);
+	if (error)
+		goto out;
+
+	error = try_break_deleg(inode, delegated_inode);
+	if (error)
+		goto out;
+
+	error = __vfs_setxattr_noperm(dentry, name, value, size, flags);
+
+out:
+	return error;
+}
+EXPORT_SYMBOL_GPL(__vfs_setxattr_locked);
 
 int
 vfs_setxattr(struct vfsmount *mnt, struct dentry *dentry, const char *name, const void *value,

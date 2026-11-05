@@ -315,7 +315,7 @@ static inline int __vlan_insert_tag(struct sk_buff *skb,
 {
 	struct vlan_ethhdr *veth;
 
-	if (unlikely(!pskb_may_pull(skb, mac_len)))
+	if (unlikely(!pskb_may_pull(skb, 2 * ETH_ALEN)))
 		return -EINVAL;
 
 	if (skb_cow_head(skb, VLAN_HLEN) < 0)
