@@ -89,24 +89,29 @@ static bool tick_check_broadcast_device(struct clock_event_device *curdev,
 void tick_install_broadcast_device(struct clock_event_device *dev)
 {
 	struct clock_event_device *cur;
+	unsigned long flags;
 
-	{
-		guard(raw_spinlock_irqsave)(&tick_broadcast_lock);
+	raw_spin_lock_irqsave(&tick_broadcast_lock, flags);
 
-		cur = tick_broadcast_device.evtdev;
-		if (!tick_check_broadcast_device(cur, dev))
-			return;
-
-		if (!try_module_get(dev->owner))
-			return;
-
-		__clockevents_exchange_device(cur, dev);
-		if (cur)
-			cur->event_handler = clockevents_handle_noop;
-		WRITE_ONCE(tick_broadcast_device.evtdev, dev);
-		if (!cpumask_empty(tick_broadcast_mask))
-			tick_broadcast_start_periodic(dev);
+	cur = tick_broadcast_device.evtdev;
+	if (!tick_check_broadcast_device(cur, dev)) {
+		raw_spin_unlock_irqrestore(&tick_broadcast_lock, flags);
+		return;
 	}
+
+	if (!try_module_get(dev->owner)) {
+		raw_spin_unlock_irqrestore(&tick_broadcast_lock, flags);
+		return;
+	}
+
+	__clockevents_exchange_device(cur, dev);
+	if (cur)
+		cur->event_handler = clockevents_handle_noop;
+	WRITE_ONCE(tick_broadcast_device.evtdev, dev);
+	if (!cpumask_empty(tick_broadcast_mask))
+		tick_broadcast_start_periodic(dev);
+
+	raw_spin_unlock_irqrestore(&tick_broadcast_lock, flags);
 
 	/* Module release must be outside of the lock */
 	if (cur)

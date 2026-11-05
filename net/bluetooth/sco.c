@@ -297,6 +297,20 @@ static int sco_send_frame(struct sock *sk, struct msghdr *msg, int len)
 	return len;
 }
 
+static struct sock *sco_sock_hold(struct sco_conn *conn)
+{
+	struct sock *sk;
+
+	if (!conn)
+		return NULL;
+
+	sk = conn->sk;
+	if (sk)
+		sock_hold(sk);
+
+	return sk;
+}
+
 static void sco_recv_frame(struct sco_conn *conn, struct sk_buff *skb)
 {
 	struct sock *sk;
