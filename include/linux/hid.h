@@ -828,6 +828,12 @@ s32 hid_snto32(__u32 value, unsigned n);
 __u32 hid_field_extract(const struct hid_device *hid, __u8 *report,
 		     unsigned offset, unsigned n);
 
+#if IS_ENABLED(CONFIG_USB_HID)
+bool hid_is_usb(const struct hid_device *hdev);
+#else
+static inline bool hid_is_usb(const struct hid_device *hdev) { return false; }
+#endif
+
 /**
  * hid_device_io_start - enable HID input during probe, remove
  *

@@ -3165,6 +3165,14 @@ int f2fs_commit_super(struct f2fs_sb_info *sbi, bool recover);
 int f2fs_sync_fs(struct super_block *sb, int sync);
 extern __printf(3, 4)
 void f2fs_msg(struct super_block *sb, const char *level, const char *fmt, ...);
+#define f2fs_err(sbi, fmt, ...) \
+	f2fs_msg((sbi)->sb, KERN_ERR, fmt, ##__VA_ARGS__)
+#define f2fs_warn(sbi, fmt, ...) \
+	f2fs_msg((sbi)->sb, KERN_WARNING, fmt, ##__VA_ARGS__)
+#define f2fs_notice(sbi, fmt, ...) \
+	f2fs_msg((sbi)->sb, KERN_NOTICE, fmt, ##__VA_ARGS__)
+#define f2fs_info(sbi, fmt, ...) \
+	f2fs_msg((sbi)->sb, KERN_INFO, fmt, ##__VA_ARGS__)
 int sanity_check_ckpt(struct f2fs_sb_info *sbi);
 
 /*
