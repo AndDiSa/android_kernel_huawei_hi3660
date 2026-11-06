@@ -176,6 +176,21 @@ struct virtqueue *virtio_find_single_vq(struct virtio_device *vdev,
 }
 
 /**
+ * virtio_synchronize_cbs - synchronize with virtqueue callbacks
+ * @dev: the virtio device
+ */
+static inline
+void virtio_synchronize_cbs(struct virtio_device *dev)
+{
+	/*
+	 * A best effort fallback to synchronize with
+	 * interrupts, preemption and softirq disabled
+	 * regions. See comment above synchronize_rcu().
+	 */
+	synchronize_rcu();
+}
+
+/**
  * virtio_device_ready - enable vq use in probe function
  * @vdev: the device
  *
