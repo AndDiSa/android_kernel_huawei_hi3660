@@ -2856,7 +2856,7 @@ static bool start_flush_work(struct work_struct *work, struct wq_barrier *barr)
 		pwq = worker->current_pwq;
 	}
 
-	check_flush_dependency(pwq->wq, work, from_cancel);
+	check_flush_dependency(pwq->wq, work, work_is_canceling(work));
 
 	insert_wq_barrier(pwq, barr, work, worker);
 	spin_unlock_irq(&pool->lock);

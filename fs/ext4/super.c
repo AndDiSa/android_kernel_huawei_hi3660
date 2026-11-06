@@ -3564,8 +3564,9 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	if (sbi->s_es->s_mount_opts[0]) {
 		char s_mount_opts[65];
 
-		strscpy_pad(s_mount_opts, sbi->s_es->s_mount_opts,
-			    sizeof(s_mount_opts));
+		memset(s_mount_opts, 0, sizeof(s_mount_opts));
+		strscpy(s_mount_opts, sbi->s_es->s_mount_opts,
+			sizeof(s_mount_opts));
 		if (!parse_options(s_mount_opts, sb, &journal_devnum,
 				   &journal_ioprio, 0)) {
 			ext4_msg(sb, KERN_WARNING,
