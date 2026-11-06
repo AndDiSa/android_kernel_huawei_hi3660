@@ -784,13 +784,12 @@ static void truncate_node(struct dnode_of_data *dn)
 	f2fs_bug_on(sbi, ni.blk_addr == NULL_ADDR);
 
 	if (ni.blk_addr != NEW_ADDR &&
-		!f2fs_is_valid_blkaddr(sbi, ni.blk_addr, DATA_GENERIC_ENHANCE)) {
+		!f2fs_is_valid_blkaddr(sbi, ni.blk_addr, DATA_GENERIC)) {
 		f2fs_err(sbi,
 			"nat entry is corrupted, run fsck to fix it, ino:%u, "
 			"nid:%u, blkaddr:%u", ni.ino, ni.nid, ni.blk_addr);
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
-		f2fs_handle_error(sbi, ERROR_INCONSISTENT_NAT);
-		return -EFSCORRUPTED;
+		return;
 	}
 
 	/* Deallocate node address */
