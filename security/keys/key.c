@@ -838,10 +838,6 @@ key_ref_t key_create_or_update(key_ref_t keyring_ref,
 
 	key_check(keyring);
 
-	key_ref = ERR_PTR(-EPERM);
-	if (!(flags & KEY_ALLOC_BYPASS_RESTRICTION))
-		restrict_link = keyring->restrict_link;
-
 	key_ref = ERR_PTR(-ENOTDIR);
 	if (keyring->type != &key_type_keyring)
 		goto error_put_type;
@@ -865,18 +861,22 @@ key_ref_t key_create_or_update(key_ref_t keyring_ref,
 	}
 	index_key.desc_len = strlen(index_key.description);
 
-	if (restrict_link) {
-		ret = restrict_link(keyring, index_key.type, &prep.payload);
-		if (ret < 0) {
-			key_ref = ERR_PTR(ret);
-			goto error_free_prep;
-		}
-	}
-
 	ret = __key_link_begin(keyring, &index_key, &edit);
 	if (ret < 0) {
 		key_ref = ERR_PTR(ret);
 		goto error_free_prep;
+	}
+
+	key_ref = ERR_PTR(-EPERM);
+	if (!(flags & KEY_ALLOC_BYPASS_RESTRICTION))
+		restrict_link = keyring->restrict_link;
+
+	if (restrict_link) {
+		ret = restrict_link(keyring, index_key.type, &prep.payload);
+		if (ret < 0) {
+			key_ref = ERR_PTR(ret);
+			goto error_link_end;
+		}
 	}
 
 	/* if we're going to allocate a new key, we're going to have
