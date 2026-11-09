@@ -1667,6 +1667,8 @@ void __detach_mounts(struct dentry *dentry)
 	if (IS_ERR_OR_NULL(mp))
 		goto out_unlock;
 
+	/* the name goes first, what covered it goes second */
+	d_drop(dentry);
 	event++;
 	while (!hlist_empty(&mp->m_list)) {
 		mnt = hlist_entry(mp->m_list.first, struct mount, mnt_mp_list);
