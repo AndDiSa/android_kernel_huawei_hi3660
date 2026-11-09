@@ -2786,7 +2786,6 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *uport)
 	struct tty_port *port;
 	int ret = 0;
 	struct device *tty_dev;
-	int num_groups;
 
 	BUG_ON(in_interrupt());
 
@@ -2802,6 +2801,17 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *uport)
 		ret = -EINVAL;
 		goto out;
 	}
+
+	/*
+	 * uart_configure_port() may set uport->attr_group and register the
+	 * console. Allocate room for both groups and a NULL terminator first.
+	 */
+	uport->tty_groups = kcalloc(3, sizeof(*uport->tty_groups), GFP_KERNEL);
+	if (!uport->tty_groups) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	uport->tty_groups[0] = &tty_dev_attr_group;
 
 	/* Link the port to the driver state table and vice versa */
 	atomic_set(&state->refcount, 1);
@@ -2828,17 +2838,6 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *uport)
 
 	port->console = uart_console(uport);
 
-	num_groups = 2;
-	if (uport->attr_group)
-		num_groups++;
-
-	uport->tty_groups = kcalloc(num_groups, sizeof(*uport->tty_groups),
-				    GFP_KERNEL);
-	if (!uport->tty_groups) {
-		ret = -ENOMEM;
-		goto out;
-	}
-	uport->tty_groups[0] = &tty_dev_attr_group;
 	if (uport->attr_group)
 		uport->tty_groups[1] = uport->attr_group;
 
